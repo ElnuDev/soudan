@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+juniper = "0.15.9"
