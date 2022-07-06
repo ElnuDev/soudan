@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 juniper = "0.15.9"
+rusqlite = "0.27.0"
