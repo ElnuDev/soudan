@@ -1,5 +1,7 @@
-#[derive(Debug, serde::Serialize)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Comment {
-    pub author: Option<String>, // null is Anonymous
+    pub author: Option<String>, // None/null is Anonymous
     pub text: String
 }
