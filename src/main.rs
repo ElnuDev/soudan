@@ -5,7 +5,11 @@ mod database;
 pub use database::Database;
 
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use std::sync::{LockResult, Mutex};
+use std::sync::Mutex;
+
+struct AppState {
+    db: Mutex<Database>
+}
 
 #[get("/comments")]
 async fn get_comments(data: web::Data<AppState>) -> impl Responder {
