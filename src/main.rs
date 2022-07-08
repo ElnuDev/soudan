@@ -1,59 +1,31 @@
-use rusqlite::{params, Connection, Result};
+mod comment;
+pub use comment::Comment;
 
-#[derive(Debug)]
-struct Comment {
-    author: Option<String>, // null is Anonymous
-    text: String
+mod database;
+pub use database::Database;
+
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use std::sync::{LockResult, Mutex};
+
+#[get("/comments")]
+async fn get_comments(data: web::Data<AppState>) -> impl Responder {
+    let db = &data.db.lock().unwrap();
+    /*db.create_comment(&Comment {
+        author: Some("Elnu".to_string()),
+        text: "Hello world".to_string()
+    }).unwrap();*/
+    HttpResponse::Ok().body(format!("{}", db.get_comments().unwrap().get(0).unwrap_or(&Comment { author: None, text: "No comments yet!".to_string() }).text))
 }
 
-struct Database {
-    conn: Connection
-}
-
-impl Database {
-    fn new() -> Result<Self> {
-        let conn = Connection::open_in_memory()?;
-        conn.execute(
-            "CREATE TABLE comment (
-                id     INTEGER PRIMARY KEY,
-                author TEXT,
-                text   TEXT NOT NULL
-            )",
-            params![]
-        )?;
-        Ok(Self { conn })
-    }
-
-    fn get_comments(&self) -> Result<Vec<Comment>> {
-        self.conn
-            .prepare("SELECT author, text FROM comment")?
-            .query_map([], |row| {
-                Ok(Comment {
-                    author: row.get(0)?,
-                    text: row.get(1)?,
-                })
-            })?
-            .collect()
-    }
-
-    fn create_comment(&self, comment: &Comment) -> Result<()> {
-        self.conn.execute(
-            "INSERT INTO comment (author, text) VALUES (?1, ?2)",
-            params![&comment.author, &comment.text],
-        )?;
-        Ok(())
-    }
-}
-
-fn main() -> Result<()> {
-    let db = Database::new()?;
-    let comment = Comment {
-        author: Some("Elnu".to_string()), // None for anonymous
-        text: "This is a test comment by yours truly!".to_string(),
-    };
-    db.create_comment(&comment)?;
-    for comment in db.get_comments()?.iter() {
-        println!("Found comment {:?}", comment);
-    }
-    Ok(())
+#[actix_web::main]
+async fn main() -> Result<(), std::io::Error> {
+    let state = web::Data::new(AppState { db: Mutex::new(Database::new().unwrap()) });
+    HttpServer::new(move || {
+        App::new()
+            .service(get_comments)
+            .app_data(state.clone())
+    })
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
 }
