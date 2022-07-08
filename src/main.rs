@@ -14,16 +14,17 @@ struct AppState {
 #[get("/comments")]
 async fn get_comments(data: web::Data<AppState>) -> impl Responder {
     let db = &data.db.lock().unwrap();
-    /*db.create_comment(&Comment {
-        author: Some("Elnu".to_string()),
-        text: "Hello world".to_string()
-    }).unwrap();*/
-    HttpResponse::Ok().body(format!("{}", db.get_comments().unwrap().get(0).unwrap_or(&Comment { author: None, text: "No comments yet!".to_string() }).text))
+    HttpResponse::Ok().json(&db.get_comments().unwrap())
 }
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
-    let state = web::Data::new(AppState { db: Mutex::new(Database::new().unwrap()) });
+    let db = Database::new().unwrap();
+    db.create_comment(&Comment {
+        author: None,
+        text: "This is anonymous test comment!".to_string(),
+    }).unwrap();
+    let state = web::Data::new(AppState { db: Mutex::new(db) });
     HttpServer::new(move || {
         App::new()
             .service(get_comments)
