@@ -1,9 +1,6 @@
 use rusqlite::{params, Connection, Result};
-#[macro_use]
-extern crate juniper;
 
-#[derive(Debug, GraphQLObject)]
-#[graphql(description="A comment on some content, such as a blog post.")]
+#[derive(Debug)]
 struct Comment {
     author: Option<String>, // null is Anonymous
     text: String
