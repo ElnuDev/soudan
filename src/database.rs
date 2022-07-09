@@ -27,7 +27,7 @@ impl Database {
 
     pub fn get_send_comments(&self) -> Result<Vec<CommentSend>> {
         self.conn
-            .prepare("SELECT author, email, text, timestamp FROM comment")?
+            .prepare("SELECT author, email, text, timestamp FROM comment ORDER BY timestamp DESC")?
             .query_map([], |row| {
                 let timestamp: NaiveDateTime = row.get(3)?;
                 let timestamp = timestamp.timestamp();
