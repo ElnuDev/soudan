@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use chrono::NaiveDateTime;
 
 // Master comment type that is stored in database
-#[derive(Deserialize, Serialize)]
 pub struct Comment {
     pub author: Option<String>, // None/null is Anonymous
     pub email: Option<String>,
-    pub text: String
+    pub text: String,
+    pub timestamp: Option<NaiveDateTime>,
 }
 
 impl Comment {
@@ -17,6 +18,7 @@ impl Comment {
                 None => None,
             },
             text: self.text.clone(),
+            timestamp: self.timestamp.unwrap().timestamp(),
         }
     }
 }
@@ -26,7 +28,8 @@ impl Comment {
 pub struct CommentSend {
     pub author: Option<String>,
     pub gravatar: Option<String>,
-    pub text: String
+    pub text: String,
+    pub timestamp: i64,
 }
 
 // Comment type received containing new comment data
@@ -43,6 +46,7 @@ impl CommentReceive {
             author: self.author.clone(),
             email: self.email.clone(),
             text: self.text.clone(),
+            timestamp: None,
         }
     }
 }

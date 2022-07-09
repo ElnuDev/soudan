@@ -13,7 +13,10 @@ struct AppState {
 
 #[get("/")]
 async fn get_comments(data: web::Data<AppState>) -> impl Responder {
-    let db = &data.db.lock().unwrap();
+    let db = match data.db.lock() {
+        Ok(db) => db,
+        Err(_) => return HttpResponse::InternalServerError().into(),
+    };
     HttpResponse::Ok().json(&db.get_send_comments().unwrap())
 }
 
