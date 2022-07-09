@@ -6,6 +6,7 @@ pub use database::Database;
 
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use std::sync::Mutex;
+use validator::Validate;
 
 struct AppState {
     db: Mutex<Database>,
@@ -32,6 +33,9 @@ async fn post_comment(data: web::Data<AppState>, bytes: web::Bytes) -> impl Resp
                 Ok(comment) => comment,
                 Err(_) => return HttpResponse::BadRequest(),
             };
+            if comment.validate().is_err() {
+                return HttpResponse::BadRequest();
+            }
             db.create_comment(&comment.to_master()).unwrap();
             HttpResponse::Ok()
         }

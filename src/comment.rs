@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 // Master comment type that is stored in database
 pub struct Comment {
@@ -33,9 +34,10 @@ pub struct CommentSend {
 }
 
 // Comment type received containing new comment data
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct CommentReceive {
     pub author: Option<String>,
+    #[validate(email)]
     pub email: Option<String>,
     pub text: String,
 }
