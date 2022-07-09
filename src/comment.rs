@@ -1,7 +1,48 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+// Master comment type that is stored in database
+#[derive(Deserialize, Serialize)]
 pub struct Comment {
     pub author: Option<String>, // None/null is Anonymous
+    pub email: Option<String>,
     pub text: String
+}
+
+impl Comment {
+    pub fn send(&self) -> CommentSend {
+        CommentSend {
+            author: self.author.clone(),
+            gravatar: match self.email.clone() {
+                Some(email) => Some(format!("{:x}", md5::compute(email.to_lowercase()))),
+                None => None,
+            },
+            text: self.text.clone(),
+        }
+    }
+}
+
+// Comment type for API responses
+#[derive(Serialize)]
+pub struct CommentSend {
+    pub author: Option<String>,
+    pub gravatar: Option<String>,
+    pub text: String
+}
+
+// Comment type received containing new comment data
+#[derive(Deserialize)]
+pub struct CommentReceive {
+    pub author: Option<String>,
+    pub email: Option<String>,
+    pub text: String,
+}
+
+impl CommentReceive {
+    pub fn to_master(&self) -> Comment {
+        Comment {
+            author: self.author.clone(),
+            email: self.email.clone(),
+            text: self.text.clone(),
+        }
+    }
 }
