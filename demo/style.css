@@ -1,0 +1,10 @@
+#comments > div {
+	display: flex;
+	gap: 0.5em;
+}
+#comments .avatar {
+	border-radius: 100%;
+	width: 80px;
+	height: 80px;
+	background-color: gray;
+}
