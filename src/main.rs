@@ -1,11 +1,12 @@
 mod comment;
+use actix_cors::Cors;
 pub use comment::*;
 
 mod database;
 pub use database::Database;
 
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-use std::sync::Mutex;
+use std::{env, sync::Mutex};
 use validator::Validate;
 
 struct AppState {
@@ -45,13 +46,24 @@ async fn post_comment(data: web::Data<AppState>, bytes: web::Bytes) -> impl Resp
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
-    let db = Database::new().unwrap();
+    let testing = {
+        let mut testing = false;
+        for argument in env::args() {
+            if argument == "--testing" || argument == "-t" {
+                testing = true;
+                break;
+            }
+        }
+        testing
+    };
+    let db = Database::new(testing).unwrap();
     let state = web::Data::new(AppState { db: Mutex::new(db) });
     HttpServer::new(move || {
         App::new()
             .service(get_comments)
             .service(post_comment)
             .app_data(state.clone())
+            .wrap(if testing { Cors::permissive() } else { Cors::default() })
     })
     .bind(("127.0.0.1", 8080))?
     .run()

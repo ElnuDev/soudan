@@ -7,7 +7,10 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new() -> Result<Self> {
+    pub fn new(testing: bool) -> Result<Self> {
+        if !testing {
+            unimplemented!("Persistent databases unimplemented!");
+        }
         let conn = Connection::open_in_memory()?;
         conn.execute(
             "CREATE TABLE comment (
