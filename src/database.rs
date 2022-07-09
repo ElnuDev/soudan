@@ -1,6 +1,6 @@
-use rusqlite::{params, Connection, Result}; 
 use crate::comment::{Comment, CommentSend};
 use chrono::NaiveDateTime;
+use rusqlite::{params, Connection, Result};
 
 pub struct Database {
     conn: Connection,
@@ -17,7 +17,7 @@ impl Database {
                 text      TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
-            params![]
+            params![],
         )?;
         Ok(Self { conn })
     }
@@ -40,7 +40,7 @@ impl Database {
             })?
             .collect()
     }
-    
+
     pub fn create_comment(&self, comment: &Comment) -> Result<()> {
         self.conn.execute(
             "INSERT INTO comment (author, email, text) VALUES (?1, ?2, ?3)",

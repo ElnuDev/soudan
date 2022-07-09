@@ -8,7 +8,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use std::sync::Mutex;
 
 struct AppState {
-    db: Mutex<Database>
+    db: Mutex<Database>,
 }
 
 #[get("/")]
@@ -34,8 +34,8 @@ async fn post_comment(data: web::Data<AppState>, bytes: web::Bytes) -> impl Resp
             };
             db.create_comment(&comment.to_master()).unwrap();
             HttpResponse::Ok()
-        },
-        Err(_) => HttpResponse::BadRequest().into()
+        }
+        Err(_) => HttpResponse::BadRequest().into(),
     }
 }
 
@@ -49,7 +49,7 @@ async fn main() -> Result<(), std::io::Error> {
             .service(post_comment)
             .app_data(state.clone())
     })
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
