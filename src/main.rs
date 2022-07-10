@@ -19,7 +19,7 @@ async fn get_comments(data: web::Data<AppState>) -> impl Responder {
         Ok(db) => db,
         Err(_) => return HttpResponse::InternalServerError().into(),
     };
-    HttpResponse::Ok().json(&db.get_send_comments().unwrap())
+    HttpResponse::Ok().json(&db.get_comments().unwrap())
 }
 
 #[post("/")]
@@ -30,14 +30,14 @@ async fn post_comment(data: web::Data<AppState>, bytes: web::Bytes) -> impl Resp
                 Ok(db) => db,
                 Err(_) => return HttpResponse::InternalServerError(),
             };
-            let comment: CommentReceive = match serde_json::from_str(&text) {
+            let comment: Comment = match serde_json::from_str(&text) {
                 Ok(comment) => comment,
                 Err(_) => return HttpResponse::BadRequest(),
             };
             if comment.validate().is_err() {
                 return HttpResponse::BadRequest();
             }
-            db.create_comment(&comment.to_master()).unwrap();
+            db.create_comment(&comment).unwrap();
             HttpResponse::Ok()
         }
         Err(_) => HttpResponse::BadRequest().into(),

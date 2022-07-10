@@ -1,5 +1,4 @@
-use crate::comment::{Comment, CommentSend};
-use chrono::NaiveDateTime;
+use crate::Comment;
 use rusqlite::{params, Connection, Result};
 
 pub struct Database {
@@ -25,20 +24,15 @@ impl Database {
         Ok(Self { conn })
     }
 
-    pub fn get_send_comments(&self) -> Result<Vec<CommentSend>> {
+    pub fn get_comments(&self) -> Result<Vec<Comment>> {
         self.conn
             .prepare("SELECT author, email, text, timestamp FROM comment ORDER BY timestamp DESC")?
             .query_map([], |row| {
-                let timestamp: NaiveDateTime = row.get(3)?;
-                let timestamp = timestamp.timestamp();
-                Ok(CommentSend {
+                Ok(Comment {
                     author: row.get(0)?,
-                    gravatar: match row.get::<usize, Option<String>>(1)? {
-                        Some(email) => Some(format!("{:x}", md5::compute(email.to_lowercase()))),
-                        None => None,
-                    },
+                    email: row.get(1)?,
                     text: row.get(2)?,
-                    timestamp: timestamp,
+                    timestamp: row.get(3)?,
                 })
             })?
             .collect()
