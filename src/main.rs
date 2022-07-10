@@ -63,7 +63,11 @@ async fn main() -> Result<(), std::io::Error> {
             .service(get_comments)
             .service(post_comment)
             .app_data(state.clone())
-            .wrap(if testing { Cors::permissive() } else { Cors::default() })
+            .wrap(if testing {
+                Cors::permissive()
+            } else {
+                Cors::default()
+            })
     })
     .bind(("127.0.0.1", 8080))?
     .run()

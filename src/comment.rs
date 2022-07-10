@@ -22,10 +22,11 @@ pub struct Comment {
 }
 
 fn serialize_gravatar<S>(email: &Option<String>, s: S) -> Result<S::Ok, S::Error>
-where S: Serializer,
+where
+    S: Serializer,
 {
-    match email {              
-        Some(email) => s.serialize_some(&format!("{:x}", md5::compute(email.to_lowercase()))),   
+    match email {
+        Some(email) => s.serialize_some(&format!("{:x}", md5::compute(email.to_lowercase()))),
         None => s.serialize_none(),
     }
 }
