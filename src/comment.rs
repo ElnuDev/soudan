@@ -3,8 +3,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize, Serializer};
 use validator::Validate;
 
-// Master comment type that is stored in database
 #[derive(Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct Comment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>, // None is Anonymous
@@ -19,6 +19,7 @@ pub struct Comment {
     #[serde(with = "ts_seconds_option")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+    pub content_id: String,
 }
 
 fn serialize_gravatar<S>(email: &Option<String>, s: S) -> Result<S::Ok, S::Error>

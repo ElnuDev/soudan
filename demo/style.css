@@ -1,8 +1,8 @@
-#comments > div {
+#soudan-comments > div {
 	display: flex;
 	gap: 0.5em;
 }
-#comments .avatar {
+.soudan-avatar {
 	border-radius: 100%;
 	width: 80px;
 	height: 80px;
