@@ -43,7 +43,12 @@ impl Database {
     pub fn create_comment(&self, comment: &Comment) -> Result<()> {
         self.conn.execute(
             "INSERT INTO comment (author, email, text, content_id) VALUES (?1, ?2, ?3, ?4)",
-            params![&comment.author, &comment.email, &comment.text, &comment.content_id],
+            params![
+                &comment.author,
+                &comment.email,
+                &comment.text,
+                &comment.content_id
+            ],
         )?;
         Ok(())
     }

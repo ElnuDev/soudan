@@ -1,27 +1,34 @@
-mod comment; use actix_cors::Cors;
+mod comment;
+use actix_cors::Cors;
 pub use comment::*;
 
 mod database;
 pub use database::Database;
 
-use actix_web::{get, post, web, App, HttpResponse, HttpRequest, HttpServer, Responder};
-use std::{env, sync::{Mutex, MutexGuard}};
-use validator::Validate;
+use actix_web::{get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use scraper::{Html, Selector};
-use std::collections::HashMap;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::{
+    env,
+    sync::{Mutex, MutexGuard},
+};
+use validator::Validate;
 
 struct AppState {
     databases: HashMap<String, Mutex<Database>>,
 }
 
-fn get_db<'a>(data: &'a web::Data<AppState>, request: &HttpRequest) -> Result<MutexGuard<'a, Database>, HttpResponse> {
+fn get_db<'a>(
+    data: &'a web::Data<AppState>,
+    request: &HttpRequest,
+) -> Result<MutexGuard<'a, Database>, HttpResponse> {
     // all the .into() are converting from HttpResponseBuilder to HttpResponse
     let origin = match request.head().headers().get("Origin") {
         Some(origin) => match origin.to_str() {
             Ok(origin) => origin,
             Err(_) => return Err(HttpResponse::BadRequest().into()),
-        }
+        },
         None => return Err(HttpResponse::BadRequest().into()),
     };
     match data.databases.get(origin) {
@@ -30,11 +37,15 @@ fn get_db<'a>(data: &'a web::Data<AppState>, request: &HttpRequest) -> Result<Mu
             Err(_) => return Err(HttpResponse::InternalServerError().into()),
         }),
         None => return Err(HttpResponse::BadRequest().into()),
-    } 
+    }
 }
 
 #[get("/{content_id}")]
-async fn get_comments(data: web::Data<AppState>, request: HttpRequest, content_id: web::Path<String>) -> impl Responder {
+async fn get_comments(
+    data: web::Data<AppState>,
+    request: HttpRequest,
+    content_id: web::Path<String>,
+) -> impl Responder {
     let database = match get_db(&data, &request) {
         Ok(database) => database,
         Err(response) => return response,
@@ -49,7 +60,11 @@ struct PostCommentsRequest {
 }
 
 #[post("/")]
-async fn post_comment(data: web::Data<AppState>, request: HttpRequest, bytes: web::Bytes) -> impl Responder {
+async fn post_comment(
+    data: web::Data<AppState>,
+    request: HttpRequest,
+    bytes: web::Bytes,
+) -> impl Responder {
     match String::from_utf8(bytes.to_vec()) {
         Ok(text) => {
             let PostCommentsRequest { url, comment } = match serde_json::from_str(&text) {
@@ -82,9 +97,11 @@ async fn post_comment(data: web::Data<AppState>, request: HttpRequest, bytes: we
             }
             match get_page_data(&url).await {
                 Ok(page_data_option) => match page_data_option {
-                    Some(page_data) => if page_data.content_id != comment.content_id {
-                        return HttpResponse::BadRequest().into();
-                    },
+                    Some(page_data) => {
+                        if page_data.content_id != comment.content_id {
+                            return HttpResponse::BadRequest().into();
+                        }
+                    }
                     None => return HttpResponse::BadRequest().into(),
                 },
                 Err(_) => return HttpResponse::InternalServerError().into(),
@@ -116,7 +133,7 @@ async fn get_page_data(url: &str) -> Result<Option<PageData>, reqwest::Error> {
     let document = Html::parse_document(&content);
     let get_meta = |name: &str| -> Option<String> {
         let selector = Selector::parse(&format!("meta[name=\"{}\"]", name)).unwrap();
-        match document.select(&selector).next() {                         
+        match document.select(&selector).next() {
             Some(element) => match element.value().attr("content") {
                 Some(value) => Some(value.to_owned()),
                 None => return None,
@@ -129,7 +146,7 @@ async fn get_page_data(url: &str) -> Result<Option<PageData>, reqwest::Error> {
             Some(id) => id,
             None => return Ok(None),
         },
-    }))
+    }));
 }
 
 #[actix_web::main]
@@ -153,7 +170,10 @@ async fn main() -> Result<(), std::io::Error> {
     }
     let mut databases = HashMap::new();
     for domain in domains.iter() {
-        databases.insert(domain.to_owned(), Mutex::new(Database::new(testing).unwrap()));
+        databases.insert(
+            domain.to_owned(),
+            Mutex::new(Database::new(testing).unwrap()),
+        );
     }
     let state = web::Data::new(AppState { databases });
     HttpServer::new(move || {
