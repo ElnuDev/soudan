@@ -23,20 +23,19 @@ fn get_db<'a>(
     data: &'a web::Data<AppState>,
     request: &HttpRequest,
 ) -> Result<MutexGuard<'a, Database>, HttpResponse> {
-    // all the .into() are converting from HttpResponseBuilder to HttpResponse
     let origin = match request.head().headers().get("Origin") {
         Some(origin) => match origin.to_str() {
             Ok(origin) => origin,
-            Err(_) => return Err(HttpResponse::BadRequest().into()),
+            Err(_) => return Err(HttpResponse::BadRequest().reason("bad origin").finish()),
         },
-        None => return Err(HttpResponse::BadRequest().into()),
+        None => return Err(HttpResponse::BadRequest().reason("bad origin").finish()),
     };
     match data.databases.get(origin) {
         Some(database) => Ok(match database.lock() {
             Ok(database) => database,
-            Err(_) => return Err(HttpResponse::InternalServerError().into()),
+            Err(_) => return Err(HttpResponse::InternalServerError().reason("database error").finish()),
         }),
-        None => return Err(HttpResponse::BadRequest().into()),
+        None => return Err(HttpResponse::BadRequest().reason("bad origin").finish()),
     }
 }
 
@@ -69,19 +68,19 @@ async fn post_comment(
         Ok(text) => {
             let PostCommentsRequest { url, comment } = match serde_json::from_str(&text) {
                 Ok(req) => req,
-                Err(_) => return HttpResponse::BadRequest().into(),
+                Err(_) => return HttpResponse::BadRequest().reason("invalid request body").finish(),
             };
             if comment.validate().is_err() {
-                return HttpResponse::BadRequest().into();
+                return HttpResponse::BadRequest().reason("invalid comment field(s)").finish();
             }
             let origin = match request.head().headers().get("Origin") {
                 Some(origin) => match origin.to_str() {
                     Ok(origin) => origin,
                     // If the Origin is not valid ASCII, it is a bad request not sent from a browser
-                    Err(_) => return HttpResponse::BadRequest().into(),
+                    Err(_) => return HttpResponse::BadRequest().reason("bad origin").finish(),
                 },
                 // If there is no Origin header, it is a bad request not sent from a browser
-                None => return HttpResponse::BadRequest().into(),
+                None => return HttpResponse::BadRequest().reason("bad origin").finish(),
             };
             // Check to see if provided URL is in scope.
             // This is to prevent malicious requests that try to get server to fetch external websites.
@@ -93,18 +92,18 @@ async fn post_comment(
                         break 'outer;
                     }
                 }
-                return HttpResponse::BadRequest().into();
+                return HttpResponse::BadRequest().reason("url out of scope").finish();
             }
             match get_page_data(&url).await {
                 Ok(page_data_option) => match page_data_option {
                     Some(page_data) => {
                         if page_data.content_id != comment.content_id {
-                            return HttpResponse::BadRequest().into();
+                            return HttpResponse::BadRequest().reason("content ids don't match").finish();
                         }
                     }
-                    None => return HttpResponse::BadRequest().into(),
+                    None => return HttpResponse::BadRequest().reason("url invalid").finish(), // e.g. 404
                 },
-                Err(_) => return HttpResponse::InternalServerError().into(),
+                Err(_) => return HttpResponse::InternalServerError().reason("failed to get page data").finish(),
             };
             let database = match get_db(&data, &request) {
                 Ok(database) => database,
@@ -113,7 +112,7 @@ async fn post_comment(
             database.create_comment(&comment).unwrap();
             HttpResponse::Ok().into()
         }
-        Err(_) => HttpResponse::BadRequest().into(),
+        Err(_) => HttpResponse::BadRequest().reason("failed to parse request body").finish(),
     }
 }
 

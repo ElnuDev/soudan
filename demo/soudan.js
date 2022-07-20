@@ -4,6 +4,7 @@ document.getElementById("soudan").innerHTML = `<h3>Make a comment</h3>
 	<label for="email">Email:</label> <input type="email" name="email">
 	<label for="text">Comment:</label>
 	<textarea name="text" required></textarea>
+	<input type="hidden" name="parent">
 	<input type="submit">
 </form>
 <h3 id="soudan-comments-header">Comments</h3>

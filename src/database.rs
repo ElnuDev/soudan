@@ -18,7 +18,8 @@ impl Database {
                 author     TEXT,
                 text       TEXT NOT NULL,
                 timestamp  DATETIME DEFAULT CURRENT_TIMESTAMP,
-                content_id TEXT NOT NULL
+                content_id TEXT NOT NULL,
+                parent     INTEGER
             )",
             params![],
         )?;
@@ -27,14 +28,33 @@ impl Database {
 
     pub fn get_comments(&self, content_id: &str) -> Result<Vec<Comment>> {
         self.conn
-            .prepare(&format!("SELECT author, email, text, timestamp FROM comment WHERE content_id='{content_id}' ORDER BY timestamp DESC"))?
+            .prepare(&format!("SELECT id, author, email, text, timestamp FROM comment WHERE content_id='{content_id}' AND parent IS NULL ORDER BY timestamp DESC"))?
             .query_map([], |row| {
+                let id = row.get::<usize, Option<i64>>(0)?.unwrap();
+                let replies = self.conn
+                    .prepare(&format!("SELECT id, author, email, text, timestamp FROM comment WHERE parent={id} ORDER BY timestamp DESC"))?
+                    .query_map([], |row| {
+                        Ok(Comment {
+                            id: row.get(0)?,
+                            author: row.get(1)?,
+                            email: row.get(2)?,
+                            text: row.get(3)?,
+                            timestamp: row.get(4)?,
+                            content_id: content_id.to_owned(),
+                            parent: Some(id),
+                            replies: Vec::new(), // no recursion
+                        })
+                    })?
+                    .collect::<Result<Vec<Comment>>>()?;
                 Ok(Comment {
-                    author: row.get(0)?,
-                    email: row.get(1)?,
-                    text: row.get(2)?,
-                    timestamp: row.get(3)?,
+                    id: Some(id),
+                    author: row.get(1)?,
+                    email: row.get(2)?,
+                    text: row.get(3)?,
+                    timestamp: row.get(4)?,
                     content_id: content_id.to_owned(),
+                    parent: None,
+                    replies,
                 })
             })?
             .collect()
