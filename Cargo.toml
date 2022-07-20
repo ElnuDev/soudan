@@ -21,3 +21,4 @@ md5 = "0.7.0"
 chrono = { version = "0.4.19", features = ["serde"] }
 reqwest = "0.11.11"
 scraper = "0.13.0"
+sanitize_html = "0.7.0"

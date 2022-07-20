@@ -14,6 +14,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 use validator::Validate;
+use sanitize_html::{sanitize_str, rules::predefined::DEFAULT, errors::SanitizeError};
 
 struct AppState {
     databases: HashMap<String, Mutex<Database>>,
@@ -66,8 +67,21 @@ async fn post_comment(
 ) -> impl Responder {
     match String::from_utf8(bytes.to_vec()) {
         Ok(text) => {
-            let PostCommentsRequest { url, comment } = match serde_json::from_str(&text) {
-                Ok(req) => req,
+            let PostCommentsRequest { url, comment } = match serde_json::from_str::<PostCommentsRequest>(&text) {
+                Ok(mut req) => {
+                    let mut sanitize_req = || -> Result<(), SanitizeError> {
+                        req.comment.text = sanitize_str(&DEFAULT, &req.comment.text)?
+                            .replace("&gt;", ">"); // required for markdown quotes
+                        if let Some(ref mut author) = req.comment.author {
+                            *author = sanitize_str(&DEFAULT, &author)?;
+                        }
+                        Ok(())
+                    };
+                    if let Err(_) = sanitize_req() {
+                        return HttpResponse::InternalServerError().reason("failed to sanitize request").finish();
+                    }
+                    req
+                }
                 Err(_) => return HttpResponse::BadRequest().reason("invalid request body").finish(),
             };
             if comment.validate().is_err() {

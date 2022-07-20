@@ -9,7 +9,7 @@ document.getElementById("soudan").innerHTML = `<h3>Make a comment</h3>
 </form>
 <h3 id="soudan-comments-header">Comments</h3>
 <div id="soudan-comments"></div>`;
-document.write(`<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>`);
+const md = window.markdownit().disable("image");
 const url = "http://127.0.0.1:8080";
 const form = document.getElementById("soudan-comment-form");
 const commentContainer = document.getElementById("soudan-comments");
@@ -52,7 +52,7 @@ function reloadComments() {
 				html = "<p>No comments yet! Be the first to make one.</p>";
 			} else {
 				comments.forEach(comment => {
-					html += `<div><img class="soudan-avatar" src="https://www.gravatar.com/avatar/${comment.gravatar}"><div><b>${comment.author ? comment.author : "Anonymous"}</b> commented ${moment(new Date(comment.timestamp * 1000)).fromNow()}:<br><div>${comment.text}</div></div></div>`;
+					html += `<div><img class="soudan-avatar" src="https://www.gravatar.com/avatar/${comment.gravatar}"><div><b>${comment.author ? comment.author : "Anonymous"}</b> commented ${moment(new Date(comment.timestamp * 1000)).fromNow()}:<br><div>${md.render(comment.text)}</div></div></div>`;
 				});
 			}
 			commentContainer.innerHTML = html;
