@@ -57,7 +57,13 @@ function reloadComments(jump) {
 			});
 		})
 		.then(comments => {
-			commentContainerHeader.innerHTML = `${comments.length} Comment${comments.length == 1 ? "" : "s"}`;
+			let commentCount = comments.length;
+			comments.forEach(comment => {
+				if (comment.replies) {
+					commentCount += comment.replies.length;
+				}
+			});
+			commentContainerHeader.innerHTML = `${commentCount} Comment${commentCount == 1 ? "" : "s"}`;
 			let html = "";
 			if (comments.length == 0) {
 				html = "<p>No comments yet! Be the first to make one.</p>";
