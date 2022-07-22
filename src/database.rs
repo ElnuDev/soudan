@@ -6,13 +6,17 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new(testing: bool) -> Result<Self> {
-        if !testing {
-            unimplemented!("Persistent databases unimplemented!");
-        }
-        let conn = Connection::open_in_memory()?;
+    pub fn new(testing: bool, name: &str) -> Result<Self> {
+        let name = name
+            .replace("http://", "")
+            .replace("https://", "");
+        let conn = if testing {
+            Connection::open_in_memory()
+        } else {
+            Connection::open(format!("{name}.db"))
+        }?;
         conn.execute(
-            "CREATE TABLE comment (
+            "CREATE TABLE IF NOT EXISTS comment (
                 id         INTEGER PRIMARY KEY,
                 email      TEXT,
                 author     TEXT,

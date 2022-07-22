@@ -203,7 +203,7 @@ async fn main() -> Result<(), std::io::Error> {
     for domain in domains.iter() {
         databases.insert(
             domain.to_owned(),
-            Mutex::new(Database::new(testing).unwrap()),
+            Mutex::new(Database::new(testing, domain).unwrap()),
         );
     }
     let state = web::Data::new(AppState { databases });
@@ -212,11 +212,18 @@ async fn main() -> Result<(), std::io::Error> {
             .service(get_comments)
             .service(post_comment)
             .app_data(state.clone())
-            .wrap(if testing {
+            // Issue with CORS on POST requests,
+            // keeping permissive for now
+            .wrap(Cors::permissive() /* if testing {
                 Cors::permissive()
             } else {
-                Cors::default()
-            })
+                let mut cors = Cors::default()
+                   .allowed_methods(vec!["GET", "POST"]);
+                for domain in domains.iter() {
+                    cors = cors.allowed_origin(domain);
+                }
+                cors
+            } */)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

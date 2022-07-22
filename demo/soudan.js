@@ -17,7 +17,7 @@ ${commentForm()}
 <h3 id="soudan-comments-header">Comments</h3>
 <div id="soudan-comments"></div>`;
 const md = window.markdownit().disable("image");
-const url = "http://127.0.0.1:8080";
+const url = "http://localhost:8080";
 const form = document.getElementById("soudan-comment-form");
 const commentContainer = document.getElementById("soudan-comments");
 const commentContainerHeader = document.getElementById("soudan-comments-header");
