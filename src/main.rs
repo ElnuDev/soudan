@@ -123,7 +123,25 @@ async fn post_comment(
                 Ok(database) => database,
                 Err(response) => return response,
             };
-            database.create_comment(&comment).unwrap();
+            if let Some(parent) = comment.parent {
+                'outer2: loop {
+                    match database.get_comments(&comment.content_id) {
+                        Ok(comments) => for other_comment in comments.iter() {
+                            if other_comment.id.unwrap() == parent {
+                                if other_comment.parent.is_none() {
+                                    break 'outer2;
+                                }
+                                break;
+                            }
+                        },
+                        Err(_) => return HttpResponse::InternalServerError().reason("failed to get comments").finish(),
+                    }
+                    return HttpResponse::BadRequest().reason("invalid comment parent").finish();
+                }
+            }
+            if let Err(_) = database.create_comment(&comment) {
+                return HttpResponse::InternalServerError().reason("failed to create comment").finish();
+            }
             HttpResponse::Ok().into()
         }
         Err(_) => HttpResponse::BadRequest().reason("failed to parse request body").finish(),

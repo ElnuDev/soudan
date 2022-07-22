@@ -32,7 +32,7 @@ impl Database {
             .query_map([], |row| {
                 let id = row.get::<usize, Option<i64>>(0)?.unwrap();
                 let replies = self.conn
-                    .prepare(&format!("SELECT id, author, email, text, timestamp FROM comment WHERE parent={id} ORDER BY timestamp DESC"))?
+                    .prepare(&format!("SELECT id, author, email, text, timestamp FROM comment WHERE parent={id}"))?
                     .query_map([], |row| {
                         Ok(Comment {
                             id: row.get(0)?,
@@ -62,12 +62,13 @@ impl Database {
 
     pub fn create_comment(&self, comment: &Comment) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO comment (author, email, text, content_id) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO comment (author, email, text, content_id, parent) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![
                 &comment.author,
                 &comment.email,
                 &comment.text,
-                &comment.content_id
+                &comment.content_id,
+                &comment.parent,
             ],
         )?;
         Ok(())
