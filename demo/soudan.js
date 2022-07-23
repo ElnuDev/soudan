@@ -1,11 +1,11 @@
-function commentForm(parent) {
+function commentForm(parentId) {
 	return `
 	<form id="soudan-comment-form" onsubmit="submitForm(this, event)">
 		<label for="author">Name:</label> <input type="text" name="author" placeholder="Anonymous">
 		<label for="email">Email:</label> <input type="email" name="email">
 		<label for="text">Comment:</label>
 		<textarea name="text" required></textarea>
-		<input type="hidden" name="parent"${parent ? ` value=${parent}` : ""}>
+		<input type="hidden" name="parent"${parentId ? ` value=${parentId}` : ""}>
 		<input type="submit">
 	</form>`;
 }
